@@ -21,9 +21,9 @@ function loadSelenium() {
   }
 }
 
-/** Find the installed Google Chrome binary (Windows paths, or CHROME_BINARY env). '' = let Selenium decide. */
+/** Find the installed Chromium binary (Chrome, Brave, or Edge on Windows, or CHROME_BINARY/BRAVE_BINARY env). '' = let Selenium decide. */
 function detectChromeBinary() {
-  const envBin = process.env.CHROME_BINARY;
+  const envBin = process.env.CHROME_BINARY || process.env.BRAVE_BINARY;
   if (envBin && fs.existsSync(envBin)) return envBin;
 
   const roots = [
@@ -31,11 +31,28 @@ function detectChromeBinary() {
     process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)',
     process.env.LOCALAPPDATA || '',
   ];
+
+  // 1. Check Google Chrome
   for (const r of roots) {
     if (!r) continue;
     const p = path.join(r, 'Google', 'Chrome', 'Application', 'chrome.exe');
     if (fs.existsSync(p)) return p;
   }
+
+  // 2. Check Brave Browser
+  for (const r of roots) {
+    if (!r) continue;
+    const p = path.join(r, 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe');
+    if (fs.existsSync(p)) return p;
+  }
+
+  // 3. Check Microsoft Edge
+  for (const r of roots) {
+    if (!r) continue;
+    const p = path.join(r, 'Microsoft', 'Edge', 'Application', 'msedge.exe');
+    if (fs.existsSync(p)) return p;
+  }
+
   return '';
 }
 

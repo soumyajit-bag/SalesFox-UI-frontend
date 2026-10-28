@@ -129,7 +129,7 @@ const GENERIC_PHONE_KEYWORDS = new Set([
 
 function normalizeTextForModel(text) {
   let t = text.toLowerCase().replaceAll('+', ' plus ');
-  t = t.replace(/[\-_\/(),:;]/g, ' ');
+  t = t.replace(/[-_/(),:;]/g, ' ');
   return ' ' + t.replace(/\s+/g, ' ').trim() + ' ';
 }
 
@@ -550,7 +550,7 @@ function parseNaturalQuery(query) {
 
   const modelWords = forModel.split(/\s+/).filter((w) => w && !GENERIC_PHONE_KEYWORDS.has(w.toLowerCase()));
   if (modelWords.length) {
-    targetModel = modelWords.join(' ').replace(/^[ \-_\/]+|[ \-_\/]+$/g, '');
+    targetModel = modelWords.join(' ').replace(/^[ _/-]+|[ _/-]+$/g, '');
   }
 
   // 3. Amazon search keyword
