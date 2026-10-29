@@ -88,6 +88,69 @@ export function parseSmartQuery(queryText = "") {
     }
   }
 
+  export async function searchWithBrandScraper(brand, query, filters = {}, onProgress = null) {
+    const baseUrl = BRAND_SCRAPER_BASES[brand];
+    if (!baseUrl) throw new Error(`No scraper is configured for ${brand}.`);
+
+    const trimmed = String(query || "").trim();
+    if (!trimmed) return [];
+
+    const payload = {
+      query: trimmed,
+      series: "All",
+      pincode: import.meta.env.VITE_SCRAPER_PINCODE || "110058",
+      in_stock_only: Boolean(filters.inStockOnly),
+    };
+    const startResponse = await fetch(`${baseUrl}/api/scrape`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!startResponse.ok) {
+      const body = await startResponse.json().catch(() => ({}));
+      throw new Error(
+        body.message ||
+          `${brand} scraper returned HTTP ${startResponse.status}. Check its server and dependencies.`
+      );
+    }
+
+    const pollLimit = 180;
+    for (let attempt = 0; attempt < pollLimit; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const statusResponse = await fetch(`${baseUrl}/api/status`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!statusResponse.ok) {
+        throw new Error(`${brand} scraper status returned HTTP ${statusResponse.status}.`);
+      }
+
+      const status = await statusResponse.json();
+      const progress = Number(status.progress) || 0;
+      const message = status.message || status.logs?.at?.(-1) || `Scraping ${brand} products...`;
+      onProgress?.({ status: status.status, progress, message });
+
+      if (status.status === "error") {
+        throw new Error(status.error || message || `${brand} scraper failed.`);
+      }
+
+      if (status.status === "completed") {
+        const products = status.products;
+        if (!Array.isArray(products)) {
+          throw new Error(`${brand} scraper completed without a products list.`);
+        }
+        return products
+          .map((item, index) => transformBrandScrapedItem(item, brand, index))
+          .filter(Boolean);
+      }
+    }
+
+    throw new Error(`${brand} scraper did not finish within 3 minutes.`);
+  }
+
   // 3. Above / Over / More than
   if (minPrice === null) {
     const aboveMatch = workingQuery.match(
@@ -320,12 +383,18 @@ export function clearAllHistory() {
 }
 
 import initialAmazonScraped from "../backend/scraped_data/amazon_products.json";
+import initialAppleScraped from "../backend/brand_scrapers/apple/scraped_data/apple_products.json";
+import initialVivoScraped from "../backend/brand_scrapers/vivo/scraped_data/vivo_products.json";
 
 /**
  * Backend Scraper Integration
  * Communicates with the Express + Turbo Amazon Scraper backend on port 5050
  */
 const BACKEND_BASE = "http://localhost:5050";
+const BRAND_SCRAPER_BASES = {
+  Apple: import.meta.env.VITE_APPLE_SCRAPER_URL || "http://localhost:5055",
+  Vivo: import.meta.env.VITE_VIVO_SCRAPER_URL || "http://localhost:5052",
+};
 
 /**
  * Get initial Amazon products directly from the Amazon data file
@@ -335,6 +404,47 @@ export function getInitialAmazonProducts() {
     return initialAmazonScraped.map(transformScrapedItem).filter(Boolean);
   }
   return [];
+}
+
+export function getInitialBrandProducts() {
+  return [
+    ...initialAppleScraped.map((item, index) =>
+      transformBrandScrapedItem(item, "Apple", index)
+    ),
+    ...initialVivoScraped.map((item, index) =>
+      transformBrandScrapedItem(item, "Vivo", index)
+    ),
+  ].filter(Boolean);
+}
+
+function transformBrandScrapedItem(item, brand, index = 0) {
+  if (!item) return null;
+
+  const identifier = item.sku || item.url || `${brand}-${index}`;
+  const priceNum = item.price_num || parsePriceNumber(item.price);
+
+  return {
+    id: `${brand.toLowerCase()}_${identifier}`,
+    name: item.title || item.model || `${brand} smartphone`,
+    image: item.image_url || "",
+    price: item.price || (priceNum ? `₹${priceNum.toLocaleString("en-IN")}` : "Check Price"),
+    originalPrice: item.mrp || "",
+    discount: item.discount || "",
+    rating: item.rating
+      ? String(item.rating).includes("/")
+        ? item.rating
+        : `${item.rating}/5`
+      : "4.3/5",
+    delivery: item.availability || (item.in_stock === false ? "Currently unavailable" : "Check availability"),
+    seller: item.seller || `${brand} Official Online Store`,
+    badge: `${brand} Official`,
+    badgeType: brand.toLowerCase(),
+    brand,
+    inStock: item.in_stock ?? true,
+    channel: brand.toLowerCase(),
+    url: item.url || "",
+    isLiveScraped: true,
+  };
 }
 
 /**
@@ -515,4 +625,3 @@ export async function searchWithBackendScraper(query, filters = {}, onProgress =
     return [];
   }
 }
-

@@ -4,6 +4,8 @@ import "./ScraperDropdown.css";
 const PLATFORM_OPTIONS = [
   { id: "amazon", name: "Amazon" },
   { id: "flipkart", name: "Flipkart" },
+  { id: "apple", name: "Apple" },
+  { id: "vivo", name: "Vivo" },
 ];
 
 function ScraperDropdown({

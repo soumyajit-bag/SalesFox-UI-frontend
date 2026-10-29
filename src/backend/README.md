@@ -40,6 +40,25 @@ node main.js --asin B0CX24C6BC --headless
 npm test
 ```
 
+## Apple and Vivo scrapers
+
+The React app includes the supplied Apple and Vivo scraper engines and their cached catalogs.
+Choose Apple or Vivo in the Scraper menu to run a fresh scrape. The Python API servers must be
+running alongside the Amazon Node server:
+
+```powershell
+py -m pip install -r src/backend/brand_scrapers/apple/requirements.txt
+py -m pip install -r src/backend/brand_scrapers/vivo/requirements.txt
+py src/backend/brand_scrapers/apple/web_server.py  # port 5055
+py src/backend/brand_scrapers/vivo/web_server.py   # port 5052, in a second terminal
+```
+
+Run these commands from the repository root. Vivo's live store extraction uses Playwright; install
+its Chromium browser with `py -m playwright install chromium` if the browser is not already
+available. Both services expose `/api/scrape` and `/api/status`. Set `VITE_APPLE_SCRAPER_URL`,
+`VITE_VIVO_SCRAPER_URL`, or `VITE_SCRAPER_PINCODE` in the Vite environment to override their
+local defaults.
+
 ## Project structure
 ```text
 amazonScraper.js   # core engine: query parser, filters, turbo + browser scraping, CSV/JSON export

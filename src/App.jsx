@@ -18,6 +18,8 @@ import {
   checkBackendHealth,
   fetchScraperHistory,
   getInitialAmazonProducts,
+  getInitialBrandProducts,
+  searchWithBrandScraper,
 } from "./services/searchService.js";
 
 // Base catalog featuring Flipkart smartphone inventory
@@ -152,6 +154,8 @@ function App() {
   const [isScrapingLive, setIsScrapingLive] = useState(false);
   const [scraperProgress, setScraperProgress] = useState({ progress: 0, message: "" });
   const [isBackendOnline, setIsBackendOnline] = useState(false);
+  const [brandScrapedProducts, setBrandScrapedProducts] = useState(() => getInitialBrandProducts());
+  const [scraperError, setScraperError] = useState("");
 
   // Load backend scraper status & history on mount
   useEffect(() => {
@@ -183,6 +187,7 @@ function App() {
     setExecutedQuery(q);
     setSearchQuery(q);
     setActiveTab("Search Results");
+    setScraperError("");
 
     // Save to localStorage history
     const updatedHistory = saveSearchQuery(q, filters);
@@ -190,28 +195,34 @@ function App() {
 
     // Call live backend scraper
     setIsScrapingLive(true);
-    setScraperProgress({ progress: 15, message: "Connecting to Amazon scraper..." });
+    setScraperProgress({ progress: 5, message: `Connecting to ${selectedPlatform} scraper...` });
 
     try {
-      const liveResults = await searchWithBackendScraper(q, filters, (progressEv) => {
+      const scraperSearch = selectedPlatform === "Apple" || selectedPlatform === "Vivo"
+        ? searchWithBrandScraper
+        : searchWithBackendScraper;
+      const liveResults = await scraperSearch(q, filters, (progressEv) => {
         setScraperProgress({
           progress: progressEv.progress || 0,
-          message: progressEv.message || "Scanning Amazon...",
+          message: progressEv.message || `Scanning ${selectedPlatform}...`,
         });
       });
 
       if (liveResults && liveResults.length > 0) {
-        setScrapedProducts((prev) => {
-          const map = new Map();
-          // Keep existing
-          prev.forEach((p) => map.set(p.asin || p.id, p));
-          // Prepend new results
-          liveResults.forEach((p) => map.set(p.asin || p.id, p));
+        const mergeProducts = (previous) => {
+          const map = new Map(previous.map((product) => [product.asin || product.id, product]));
+          liveResults.forEach((product) => map.set(product.asin || product.id, product));
           return Array.from(map.values());
-        });
+        };
+        if (selectedPlatform === "Apple" || selectedPlatform === "Vivo") {
+          setBrandScrapedProducts(mergeProducts);
+        } else {
+          setScrapedProducts(mergeProducts);
+        }
       }
     } catch (err) {
       console.warn("Live scraper error:", err);
+      setScraperError(err.message || `Unable to connect to the ${selectedPlatform} scraper.`);
     } finally {
       setIsScrapingLive(false);
     }
@@ -259,8 +270,10 @@ function App() {
     ALL_CATALOG_PRODUCTS.forEach((p) => map.set(p.asin || p.id, p));
     // 2. Scraped items from live backend
     scrapedProducts.forEach((p) => map.set(p.asin || p.id, p));
+    // 3. Apple and Vivo scraper catalogs and live results
+    brandScrapedProducts.forEach((p) => map.set(p.asin || p.id, p));
     return Array.from(map.values());
-  }, [scrapedProducts]);
+  }, [brandScrapedProducts, scrapedProducts]);
 
   // Compute Search Results
   const filteredSearchResults = useMemo(() => {
@@ -507,14 +520,20 @@ function App() {
               )}
             </div>
 
-            {/* Live Amazon Scraper Progress Banner */}
+            {scraperError && (
+              <div className="scraper-error-banner" role="alert">
+                {scraperError}
+              </div>
+            )}
+
+            {/* Live scraper progress */}
             {isScrapingLive && (
               <div className="scraper-progress-banner" role="status" aria-live="polite">
                 <div className="scraper-progress-header">
                   <div className="scraper-progress-header-left">
                     <span className="scraper-pulse-dot" />
                     <span className="scraper-progress-msg">
-                      <strong>Live Amazon Scraper:</strong> {scraperProgress.message || "Scanning Amazon catalog..."}
+                      <strong>Live {selectedPlatform} Scraper:</strong> {scraperProgress.message || `Scanning ${selectedPlatform} catalog...`}
                     </span>
                   </div>
                   <span className="scraper-progress-number">{scraperProgress.progress || 15}%</span>
