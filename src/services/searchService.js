@@ -88,69 +88,6 @@ export function parseSmartQuery(queryText = "") {
     }
   }
 
-  export async function searchWithBrandScraper(brand, query, filters = {}, onProgress = null) {
-    const baseUrl = BRAND_SCRAPER_BASES[brand];
-    if (!baseUrl) throw new Error(`No scraper is configured for ${brand}.`);
-
-    const trimmed = String(query || "").trim();
-    if (!trimmed) return [];
-
-    const payload = {
-      query: trimmed,
-      series: "All",
-      pincode: import.meta.env.VITE_SCRAPER_PINCODE || "110058",
-      in_stock_only: Boolean(filters.inStockOnly),
-    };
-    const startResponse = await fetch(`${baseUrl}/api/scrape`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!startResponse.ok) {
-      const body = await startResponse.json().catch(() => ({}));
-      throw new Error(
-        body.message ||
-          `${brand} scraper returned HTTP ${startResponse.status}. Check its server and dependencies.`
-      );
-    }
-
-    const pollLimit = 180;
-    for (let attempt = 0; attempt < pollLimit; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const statusResponse = await fetch(`${baseUrl}/api/status`, {
-        headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!statusResponse.ok) {
-        throw new Error(`${brand} scraper status returned HTTP ${statusResponse.status}.`);
-      }
-
-      const status = await statusResponse.json();
-      const progress = Number(status.progress) || 0;
-      const message = status.message || status.logs?.at?.(-1) || `Scraping ${brand} products...`;
-      onProgress?.({ status: status.status, progress, message });
-
-      if (status.status === "error") {
-        throw new Error(status.error || message || `${brand} scraper failed.`);
-      }
-
-      if (status.status === "completed") {
-        const products = status.products;
-        if (!Array.isArray(products)) {
-          throw new Error(`${brand} scraper completed without a products list.`);
-        }
-        return products
-          .map((item, index) => transformBrandScrapedItem(item, brand, index))
-          .filter(Boolean);
-      }
-    }
-
-    throw new Error(`${brand} scraper did not finish within 3 minutes.`);
-  }
-
   // 3. Above / Over / More than
   if (minPrice === null) {
     const aboveMatch = workingQuery.match(
@@ -624,4 +561,67 @@ export async function searchWithBackendScraper(query, filters = {}, onProgress =
     );
     return [];
   }
+}
+
+export async function searchWithBrandScraper(brand, query, filters = {}, onProgress = null) {
+  const baseUrl = BRAND_SCRAPER_BASES[brand];
+  if (!baseUrl) throw new Error(`No scraper is configured for ${brand}.`);
+
+  const trimmed = String(query || "").trim();
+  if (!trimmed) return [];
+
+  const payload = {
+    query: trimmed,
+    series: "All",
+    pincode: import.meta.env.VITE_SCRAPER_PINCODE || "110058",
+    in_stock_only: Boolean(filters.inStockOnly),
+  };
+  const startResponse = await fetch(`${baseUrl}/api/scrape`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!startResponse.ok) {
+    const body = await startResponse.json().catch(() => ({}));
+    throw new Error(
+      body.message ||
+        `${brand} scraper returned HTTP ${startResponse.status}. Check its server and dependencies.`
+    );
+  }
+
+  const pollLimit = 180;
+  for (let attempt = 0; attempt < pollLimit; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const statusResponse = await fetch(`${baseUrl}/api/status`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!statusResponse.ok) {
+      throw new Error(`${brand} scraper status returned HTTP ${statusResponse.status}.`);
+    }
+
+    const status = await statusResponse.json();
+    const progress = Number(status.progress) || 0;
+    const message = status.message || status.logs?.at?.(-1) || `Scraping ${brand} products...`;
+    onProgress?.({ status: status.status, progress, message });
+
+    if (status.status === "error") {
+      throw new Error(status.error || message || `${brand} scraper failed.`);
+    }
+
+    if (status.status === "completed") {
+      const products = status.products;
+      if (!Array.isArray(products)) {
+        throw new Error(`${brand} scraper completed without a products list.`);
+      }
+      return products
+        .map((item, index) => transformBrandScrapedItem(item, brand, index))
+        .filter(Boolean);
+    }
+  }
+
+  throw new Error(`${brand} scraper did not finish within 3 minutes.`);
 }
