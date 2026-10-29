@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar.jsx";
 import ProductCard from "./components/ProductCard.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import WishlistPage from "./components/WishlistPage.jsx";
+import ScraperDropdown from "./components/ScraperDropdown.jsx";
 import {
   parseSmartQuery,
   filterProducts,
@@ -142,6 +143,9 @@ function App() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [activeCategory, setActiveCategory] = useState("All products");
+
+  // Scraper platform selection ("Amazon" | "Flipkart")
+  const [selectedPlatform, setSelectedPlatform] = useState("Amazon");
 
   // Amazon products sourced exclusively from the Amazon scraper files & live scraper
   const [scrapedProducts, setScrapedProducts] = useState(() => getInitialAmazonProducts());
