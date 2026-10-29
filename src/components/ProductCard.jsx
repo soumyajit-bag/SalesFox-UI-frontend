@@ -84,7 +84,14 @@ function ProductCard({
           alt={name}
           loading="lazy"
           decoding="async"
-          referrerPolicy="no-referrer"
+          onError={(e) => {
+            // Prevent infinite loop if placeholder also fails
+            if (!e.target.dataset.errored) {
+              e.target.dataset.errored = "1";
+              e.target.src =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f0f0f0'/%3E%3Crect x='60' y='50' width='80' height='70' rx='4' fill='%23d0d0d0'/%3E%3Ccircle cx='85' cy='75' r='10' fill='%23b0b0b0'/%3E%3Cpolygon points='60,120 90,85 115,105 140,75 140,120' fill='%23c0c0c0'/%3E%3Ctext x='100' y='155' text-anchor='middle' font-family='sans-serif' font-size='11' fill='%23999'%3ENo image%3C/text%3E%3C/svg%3E";
+            }
+          }}
         />
       </div>
       <button
