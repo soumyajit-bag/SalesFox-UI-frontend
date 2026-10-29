@@ -20,6 +20,7 @@ import {
   getInitialAmazonProducts,
   getInitialBrandProducts,
   searchWithBrandScraper,
+  fetchBrandProducts,
 } from "./services/searchService.js";
 
 // Base catalog featuring Flipkart smartphone inventory
@@ -171,6 +172,33 @@ function App() {
     });
   }, []);
 
+  // Connect scraper dropdown with backend data when platform selection changes
+  useEffect(() => {
+    if (selectedPlatform === "Amazon" && isBackendOnline) {
+      fetchScraperHistory().then((historyItems) => {
+        if (historyItems && historyItems.length > 0) {
+          setScrapedProducts((prev) => {
+            const map = new Map();
+            prev.forEach((p) => map.set(p.asin || p.id, p));
+            historyItems.forEach((p) => map.set(p.asin || p.id, p));
+            return Array.from(map.values());
+          });
+        }
+      });
+    } else if (selectedPlatform === "Apple" || selectedPlatform === "Vivo") {
+      fetchBrandProducts(selectedPlatform).then((brandItems) => {
+        if (brandItems && brandItems.length > 0) {
+          setBrandScrapedProducts((prev) => {
+            const map = new Map();
+            prev.forEach((p) => map.set(p.asin || p.id, p));
+            brandItems.forEach((p) => map.set(p.asin || p.id, p));
+            return Array.from(map.values());
+          });
+        }
+      });
+    }
+  }, [selectedPlatform, isBackendOnline]);
+
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);
   };
@@ -198,9 +226,11 @@ function App() {
     setScraperProgress({ progress: 5, message: `Connecting to ${selectedPlatform} scraper...` });
 
     try {
-      const scraperSearch = selectedPlatform === "Apple" || selectedPlatform === "Vivo"
-        ? searchWithBrandScraper
-        : searchWithBackendScraper;
+      const scraperSearch =
+        selectedPlatform === "Apple" || selectedPlatform === "Vivo"
+          ? (queryText, filterOpts, onProg) =>
+              searchWithBrandScraper(selectedPlatform, queryText, filterOpts, onProg)
+          : searchWithBackendScraper;
       const liveResults = await scraperSearch(q, filters, (progressEv) => {
         setScraperProgress({
           progress: progressEv.progress || 0,
@@ -266,19 +296,45 @@ function App() {
   // Unified Product Catalog: Merges standard catalog + live verified scraped items
   const allUnifiedProducts = useMemo(() => {
     const map = new Map();
-    // 1. Initial base catalog
+    // 1. Initial base catalog (Flipkart items)
     ALL_CATALOG_PRODUCTS.forEach((p) => map.set(p.asin || p.id, p));
-    // 2. Scraped items from live backend
+    // 2. Scraped items from live backend (Amazon items)
     scrapedProducts.forEach((p) => map.set(p.asin || p.id, p));
     // 3. Apple and Vivo scraper catalogs and live results
     brandScrapedProducts.forEach((p) => map.set(p.asin || p.id, p));
     return Array.from(map.values());
   }, [brandScrapedProducts, scrapedProducts]);
 
-  // Compute Search Results
+  // Connect scraper dropdown selection with specific backend catalog data:
+  // When on Amazon -> only Amazon data appears
+  // When on Flipkart -> only Flipkart data appears
+  // When on Apple -> only Apple data appears
+  // When on Vivo -> only Vivo data appears
+  const platformProducts = useMemo(() => {
+    const targetChannel = selectedPlatform.toLowerCase();
+    return allUnifiedProducts.filter((product) => {
+      const channel = (product.channel || "").toLowerCase();
+      return channel === targetChannel;
+    });
+  }, [allUnifiedProducts, selectedPlatform]);
+
+  // Apply any active smart filters to the platform-specific catalog
+  const displayedProducts = useMemo(() => {
+    if (hasActiveFilters) {
+      return filterProducts(platformProducts, "", filters);
+    }
+    return platformProducts;
+  }, [platformProducts, hasActiveFilters, filters]);
+
+  // Compute Search Results filtered by active scraper platform
   const filteredSearchResults = useMemo(() => {
     if (!executedQuery) return [];
-    const results = filterProducts(allUnifiedProducts, executedQuery, filters);
+    const targetChannel = selectedPlatform.toLowerCase();
+    const platformPool = allUnifiedProducts.filter(
+      (p) => (p.channel || "").toLowerCase() === targetChannel
+    );
+    const pool = platformPool.length > 0 ? platformPool : allUnifiedProducts;
+    const results = filterProducts(pool, executedQuery, filters);
 
     // Sorting
     return [...results].sort((a, b) => {
@@ -292,16 +348,16 @@ function App() {
       if (filters.sortBy === "rating_desc") return ratingB - ratingA;
       return 0; // relevance
     });
-  }, [executedQuery, filters, allUnifiedProducts]);
+  }, [executedQuery, filters, allUnifiedProducts, selectedPlatform]);
 
   // Available brands for filter dropdown
   const availableBrands = useMemo(() => {
     const set = new Set();
-    allUnifiedProducts.forEach((p) => {
+    platformProducts.forEach((p) => {
       if (p.brand) set.add(p.brand);
     });
     return Array.from(set).sort();
-  }, [allUnifiedProducts]);
+  }, [platformProducts]);
 
   return (
     <div className="app">
@@ -315,9 +371,11 @@ function App() {
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
         counts={{
-          all: allUnifiedProducts.length,
+          all: platformProducts.length,
           flipkart: allUnifiedProducts.filter((p) => p.channel === "flipkart").length,
           amazon: allUnifiedProducts.filter((p) => p.channel === "amazon").length,
+          apple: allUnifiedProducts.filter((p) => p.channel === "apple").length,
+          vivo: allUnifiedProducts.filter((p) => p.channel === "vivo").length,
         }}
       />
 

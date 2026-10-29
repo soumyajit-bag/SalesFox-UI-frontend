@@ -475,6 +475,31 @@ export async function fetchScraperHistory() {
 }
 
 /**
+ * Fetch cached/latest products from brand scraper backend (Apple, Vivo)
+ */
+export async function fetchBrandProducts(brand) {
+  const baseUrl = BRAND_SCRAPER_BASES[brand];
+  if (!baseUrl) return [];
+  try {
+    const res = await fetch(`${baseUrl}/api/status`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (data && Array.isArray(data.products) && data.products.length > 0) {
+      return data.products
+        .map((item, index) => transformBrandScrapedItem(item, brand, index))
+        .filter(Boolean);
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Run live Amazon scraper for query and poll until completed
  */
 export async function searchWithBackendScraper(query, filters = {}, onProgress = null) {

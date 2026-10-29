@@ -147,6 +147,14 @@
   background-color: #2874f0;
 }
 
+.scraper-option-dot.dot-apple {
+  background-color: #555555;
+}
+
+.scraper-option-dot.dot-vivo {
+  background-color: #415fff;
+}
+
 .scraper-option-name {
   font-size: 13px;
 }

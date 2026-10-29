@@ -57,6 +57,14 @@
   text-align: left;
 }
 
+.product-count-sub {
+  font-size: 13px;
+  color: #172337;
+  font-weight: 500;
+  display: block;
+  margin-top: 3px;
+}
+
 .scraper-error-banner {
   margin: 0 32px 16px;
   padding: 12px 16px;
