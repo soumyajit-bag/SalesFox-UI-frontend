@@ -133,7 +133,7 @@ const INITIAL_FILTERS = {
 function App() {
   const [activeTab, setActiveTab] = useState("All Products");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isWishListed, set]
+  const [isWishListed, setWishListed, setWishlist] = useState([]);
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
