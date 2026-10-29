@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 
 function ProductCard({
   name,
@@ -14,6 +14,62 @@ function ProductCard({
   url,
 }) {
   const [isWishListed, setIsWishListed] = useState(false);
+  const [purchaseMode, setPurchaseMode] = useState("single"); // "single" | "bulk"
+  const [bulkQuantity, setBulkQuantity] = useState(10);
+
+  // Parse numeric unit price from price prop (e.g. "₹65,999" -> 65999)
+  const unitPriceNum = useMemo(() => {
+    if (typeof price === "number") return price;
+    const cleaned = String(price || "").replace(/[^0-9.]/g, "");
+    return parseFloat(cleaned) || 0;
+  }, [price]);
+
+  // Ensure positive whole number for calculation
+  const safeQuantity =
+    typeof bulkQuantity === "number" && bulkQuantity > 0 ? bulkQuantity : 10;
+
+  // Calculate total price: Unit Price × Quantity
+  const totalPriceNum = unitPriceNum * safeQuantity;
+
+  // Format prices using Indian numbering system
+  const formattedUnitPrice = useMemo(() => {
+    return "₹" + Math.round(unitPriceNum).toLocaleString("en-IN");
+  }, [unitPriceNum]);
+
+  const formattedTotal = useMemo(() => {
+    return "₹" + Math.round(totalPriceNum).toLocaleString("en-IN");
+  }, [totalPriceNum]);
+
+  // Quantity input handlers with validation (positive whole numbers only)
+  const handleQuantityChange = (e) => {
+    const val = e.target.value;
+    if (val === "") {
+      setBulkQuantity("");
+      return;
+    }
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      setBulkQuantity(parsed);
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (!bulkQuantity || bulkQuantity < 1) {
+      setBulkQuantity(10);
+    }
+  };
+
+  const handleIncrement = () => {
+    const current = typeof bulkQuantity === "number" ? bulkQuantity : 10;
+    setBulkQuantity(current + 1);
+  };
+
+  const handleDecrement = () => {
+    const current = typeof bulkQuantity === "number" ? bulkQuantity : 10;
+    if (current > 1) {
+      setBulkQuantity(current - 1);
+    }
+  };
 
   return (
     <div className={`product-card ${badgeType ? `card-${badgeType}` : ""}`}>
@@ -55,22 +111,115 @@ function ProductCard({
             name
           )}
         </h3>
-        <div className="product-price-row">
-          <p className="product-price">{price}</p>
-          {originalPrice && (
-            <span className="product-original-price">{originalPrice}</span>
-          )}
-          {discount && (
-            <span className="product-discount-pill">{discount}</span>
-          )}
-        </div>
+
+        {/* Dynamic Price Display: Single vs Bulk */}
+        {purchaseMode === "bulk" ? (
+          <div className="product-bulk-pricing">
+            <div className="product-price-row">
+              <span className="product-price bulk-total-price">
+                {formattedTotal}
+              </span>
+              <span className="bulk-badge-pill">
+                Bulk ({safeQuantity} units)
+              </span>
+            </div>
+            <div className="product-unit-price-line">
+              Unit price: <strong>{formattedUnitPrice}</strong>
+            </div>
+          </div>
+        ) : (
+          <div className="product-price-row">
+            <p className="product-price">{price}</p>
+            {originalPrice && (
+              <span className="product-original-price">{originalPrice}</span>
+            )}
+            {discount && (
+              <span className="product-discount-pill">{discount}</span>
+            )}
+          </div>
+        )}
+
         <p className="product-seller">Seller: {seller}</p>
       </div>
+
       <div className="product-details">
-        <p className="product-rating">
-          <span className="star-icon">★</span> {rating}
-        </p>
-        <p className="product-delivery">Delivery: {delivery}</p>
+        <div className="product-details-left">
+          <p className="product-rating">
+            <span className="star-icon">★</span> {rating}
+          </p>
+          <p className="product-delivery">Delivery: {delivery}</p>
+        </div>
+
+        <div className="product-details-right">
+          {/* Bulk Quantity Input (only displayed in Bulk mode) */}
+          {purchaseMode === "bulk" && (
+            <div
+              className="bulk-qty-control"
+              aria-label="Bulk quantity selection"
+            >
+              <span className="bulk-qty-label">Qty:</span>
+              <div className="bulk-qty-input-group">
+                <button
+                  type="button"
+                  className="bulk-qty-btn"
+                  onClick={handleDecrement}
+                  aria-label="Decrease quantity"
+                  disabled={safeQuantity <= 1}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="bulk-qty-input"
+                  value={bulkQuantity}
+                  onChange={handleQuantityChange}
+                  onBlur={handleQuantityBlur}
+                  aria-label={`Bulk quantity for ${name}`}
+                />
+                <button
+                  type="button"
+                  className="bulk-qty-btn"
+                  onClick={handleIncrement}
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Compact Single / Bulk Selector */}
+          <div
+            className="purchase-mode-selector"
+            role="radiogroup"
+            aria-label={`Purchase option for ${name}`}
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={purchaseMode === "single"}
+              className={`mode-selector-btn ${
+                purchaseMode === "single" ? "active" : ""
+              }`}
+              onClick={() => setPurchaseMode("single")}
+            >
+              Single
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={purchaseMode === "bulk"}
+              className={`mode-selector-btn ${
+                purchaseMode === "bulk" ? "active" : ""
+              }`}
+              onClick={() => setPurchaseMode("bulk")}
+            >
+              Bulk
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

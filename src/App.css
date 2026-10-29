@@ -206,6 +206,171 @@ background-color : transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+}
+
+.product-details-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.product-details-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* --- Single / Bulk Selector --- */
+.purchase-mode-selector {
+  display: inline-flex;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+  user-select: none;
+}
+
+.mode-selector-btn {
+  background: transparent;
+  border: none;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mode-selector-btn:hover {
+  color: #0f172a;
+}
+
+.mode-selector-btn.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.mode-selector-btn:focus-visible {
+  outline: 2px solid #2874f0;
+  outline-offset: 1px;
+}
+
+/* --- Bulk Quantity Stepper & Input --- */
+.bulk-qty-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bulk-qty-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.bulk-qty-input-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.bulk-qty-btn {
+  background: #f8fafc;
+  border: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease;
+  line-height: 1;
+}
+
+.bulk-qty-btn:hover:not(:disabled) {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.bulk-qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bulk-qty-input {
+  width: 38px;
+  height: 22px;
+  border: none;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0f172a;
+  padding: 0 2px;
+  outline: none;
+  font-family: inherit;
+  -moz-appearance: textfield;
+}
+
+.bulk-qty-input::-webkit-outer-spin-button,
+.bulk-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bulk-qty-input:focus {
+  background-color: #eff6ff;
+}
+
+/* --- Bulk Pricing Display --- */
+.product-bulk-pricing {
+  margin: 4px 0;
+}
+
+.bulk-total-price {
+  color: #0f172a;
+}
+
+.bulk-badge-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.product-unit-price-line {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.product-unit-price-line strong {
+  color: #334155;
+  font-weight: 600;
 }
 
 .product-rating {
@@ -799,6 +964,18 @@ background-color : transparent;
   .product-details button {
     padding: 4px 5px;
     font-size: 10px;
+  }
+
+  .product-details .mode-selector-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .product-details .bulk-qty-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 13px;
   }
 }
 
