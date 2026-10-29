@@ -544,9 +544,15 @@ function App() {
                 <h2>
                   Search Results for <span>"{executedQuery}"</span>
                 </h2>
-                <span className="results-count-badge">
-                  {filteredSearchResults.length} {filteredSearchResults.length === 1 ? "product" : "products"} found
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <ScraperDropdown
+                    selectedPlatform={selectedPlatform}
+                    onSelectPlatform={setSelectedPlatform}
+                  />
+                  <span className="results-count-badge">
+                    {filteredSearchResults.length} {filteredSearchResults.length === 1 ? "product" : "products"} found
+                  </span>
+                </div>
               </div>
 
               {/* NLP Query Insights Bar */}
@@ -660,30 +666,55 @@ function App() {
         {activeTab === "All Products" && (
           <main className="main-content">
             <div className="product-section-header">
-              <h2 className="product-section-title">Recommended for you</h2>
+              <div className="section-title-wrap">
+                <h2 className="product-section-title">Recommended for you</h2>
+                <span className="product-count-sub">
+                  Showing {displayedProducts.length} {selectedPlatform} products
+                </span>
+              </div>
               <ScraperDropdown
                 selectedPlatform={selectedPlatform}
                 onSelectPlatform={setSelectedPlatform}
               />
             </div>
-            <div className="product-grid">
-              {allUnifiedProducts.slice(0, 12).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  name={product.name}
-                  image={product.image}
-                  price={product.price}
-                  originalPrice={product.originalPrice}
-                  discount={product.discount}
-                  rating={product.rating}
-                  delivery={product.delivery}
-                  seller={product.seller}
-                  badge={product.badge}
-                  badgeType={product.badgeType}
-                  url={product.url}
-                />
-              ))}
-            </div>
+
+            {displayedProducts.length > 0 ? (
+              <div className="product-grid">
+                {displayedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    name={product.name}
+                    image={product.image}
+                    price={product.price}
+                    originalPrice={product.originalPrice}
+                    discount={product.discount}
+                    rating={product.rating}
+                    delivery={product.delivery}
+                    seller={product.seller}
+                    badge={product.badge}
+                    badgeType={product.badgeType}
+                    url={product.url}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="search-empty-state">
+                <div className="empty-state-icon">📦</div>
+                <h3>No {selectedPlatform} products found</h3>
+                <p>
+                  No products matched the current filters for {selectedPlatform}.
+                </p>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    className="placeholder-action-btn"
+                    onClick={handleResetFilters}
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+            )}
           </main>
         )}
 
