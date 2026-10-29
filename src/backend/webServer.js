@@ -12,6 +12,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { AmazonScraper, DataExporter, parseNaturalQuery, parseCsv, logger } = require('./amazonScraper');
+const { autoCommitScrapedData } = require('./autoCommitScrapedData');
 
 let getDriver = null;
 try {
@@ -258,6 +259,7 @@ async function runScrapeWorker(params) {
       addLog(`Saving ${results.length} items to persistent CSV & JSON...`);
       DataExporter.saveToCsv(results, CSV_FILE);
       DataExporter.saveToJson(results, JSON_FILE);
+      autoCommitScrapedData(CSV_FILE, JSON_FILE);
     }
 
     currentJob.status = 'completed';

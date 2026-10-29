@@ -12,6 +12,7 @@ const { parseArgs } = require('node:util');
 
 const { AmazonScraper, DataExporter, parseCsv } = require('./amazonScraper');
 const { getDriver, resetProfile } = require('./browser');
+const { autoCommitScrapedData } = require('./autoCommitScrapedData');
 
 const BASE_DIR = __dirname;
 const CONFIG_PATH = path.join(BASE_DIR, 'scraper_config.json');
@@ -80,8 +81,11 @@ function readTargets(filepath) {
 }
 
 function persist(config, data) {
-  DataExporter.saveToCsv(data, csvPathOf(config));
-  DataExporter.saveToJson(data, jsonPathOf(config));
+  const csvPath = csvPathOf(config);
+  const jsonPath = jsonPathOf(config);
+  DataExporter.saveToCsv(data, csvPath);
+  DataExporter.saveToJson(data, jsonPath);
+  autoCommitScrapedData(csvPath, jsonPath);
 }
 
 // ---------------------------------------------------------------------------
@@ -285,6 +289,7 @@ async function runCliArgs(args, config) {
   const save = (data) => {
     DataExporter.saveToCsv(data, csvPath);
     DataExporter.saveToJson(data, jsonPath);
+    autoCommitScrapedData(csvPath, jsonPath);
   };
 
   // Searches use the turbo engine; only open Chrome when it is actually needed.

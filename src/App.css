@@ -84,6 +84,19 @@
   background-color: #f8fafc;
 }
 
+.wishlist-button {
+margin-left: auto;
+/* margin-top: 10px; */
+font-size: 20px;
+padding: 4px 8px;
+border : none;
+background-color : transparent;
+}
+
+.Clicked {
+  color: #ff0000;
+
+}
 .product-badge-tag {
   position: absolute;
   top: 8px;

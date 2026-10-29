@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 function ProductCard({
   name,
@@ -13,6 +13,8 @@ function ProductCard({
   badgeType,
   url,
 }) {
+  const [isWishListed, setIsWishListed] = useState(false);
+
   return (
     <div className={`product-card ${badgeType ? `card-${badgeType}` : ""}`}>
       <div className="product-image">
@@ -29,6 +31,14 @@ function ProductCard({
           referrerPolicy="no-referrer"
         />
       </div>
+      <button
+        type="button"
+        className={`wishlist-button ${isWishListed ? "Clicked" : "notClicked"}`}
+        onClick={() => setIsWishListed((prev) => !prev)}
+        aria-label={isWishListed ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        {isWishListed ? "♥" : "♡"}
+      </button>
       <div className="product-info">
         <h3 title={name}>
           {url ? (

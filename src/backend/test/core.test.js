@@ -23,6 +23,9 @@ test('budget parsing', () => {
   const b = parseNaturalQuery('earbuds between 1k and 3k');
   assert.deepEqual([b.min_price, b.max_price], [1000, 3000]);
   assert.equal(parseNaturalQuery('phones under 2 lakh').max_price, 200000);
+  assert.equal(parseNaturalQuery('phones under ₹25,000').max_price, 25000);
+  assert.equal(parseNaturalQuery('earbuds between ₹1,000 and ₹3,000').max_price, 3000);
+  assert.equal(parseNaturalQuery('phones under 2 lakhs').max_price, 200000);
 });
 
 test('brand + model detection', () => {

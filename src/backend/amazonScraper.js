@@ -457,15 +457,15 @@ function extractBrandAndSpecs(title) {
 // ---------------------------------------------------------------------------
 // Natural-language query parsing
 // ---------------------------------------------------------------------------
-const AMOUNT = String.raw`(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|l|lac|lakh)?`;
+const AMOUNT = String.raw`(?:rs\.?|inr|₹)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|thousands|l|lac|lacs|lakh|lakhs)?`;
 const BETWEEN_RE = new RegExp(String.raw`(?:between|from)\s*${AMOUNT}\s*(?:to|and|-)\s*${AMOUNT}`, 'i');
 const UNDER_RE = new RegExp(String.raw`(?:under|below|less\s+than|up\s+to|within|max|<|<=)\s*${AMOUNT}`, 'i');
 const ABOVE_RE = new RegExp(String.raw`(?:above|over|more\s+than|min|>|>=)\s*${AMOUNT}`, 'i');
 
 /** '25 k' -> 25000, '2 lakh' -> 200000, bare '25' -> 25000 (shorthand), '25000' stays. */
 function scaleAmount(valStr, unit) {
-  const v = parseFloat(valStr);
-  const u = (unit || '').toLowerCase();
+  const v = parseFloat(String(valStr || '').replace(/,/g, ''));
+  const u = String(unit || '').toLowerCase().replace(/s$/, '');
   if (u === 'l' || u === 'lac' || u === 'lakh') return v * 100000;
   if (u === 'k' || u === 'thousand' || (v > 0 && v <= 100)) return v * 1000;
   return v;

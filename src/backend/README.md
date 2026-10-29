@@ -46,6 +46,7 @@ amazonScraper.js   # core engine: query parser, filters, turbo + browser scrapin
 browser.js         # stealth Chrome driver + persistent profiles (selenium-webdriver, loaded lazily)
 main.js            # interactive CLI + command-line entrypoint
 webServer.js       # Express REST API + static dashboard (serves ./web)
+autoCommitScrapedData.js # auto-commits only the default CSV/JSON scraper output
 api/index.js       # Vercel serverless entry
 web/               # your existing dashboard (index.html) - unchanged
 test/              # unit tests
@@ -55,6 +56,11 @@ test/              # unit tests
 Same keys as before: `domain`, `headless`, `profiles_dir`, `output_dir`, `csv_file`, `json_file`,
 `delay_range_seconds`, `page_load_timeout`, `stealth_mode`, `user_agent`.
 
+Scrapes that save results automatically commit the default `scraped_data/amazon_products.csv` and
+`scraped_data/amazon_products.json` files when running inside the Git checkout. Custom output
+paths and deployments without a Git checkout are not committed. These commits do not push to a
+remote and require Git user identity to be configured.
+
 ## Deploy
 | Target | How |
 |---|---|
@@ -63,5 +69,3 @@ Same keys as before: `domain`, `headless`, `profiles_dir`, `output_dir`, `csv_fi
 | Hugging Face / Docker | `Dockerfile` (port 7860) |
 | Vercel | `vercel.json` -> `api/index.js` |
 | Public tunnel | `run_tunnel.bat` (Cloudflare) or `start_localtunnel_24_7.bat` (unchanged) |
-
-`_gitignore` -> rename to `.gitignore`.
