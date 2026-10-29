@@ -582,7 +582,13 @@ function App() {
         {/* Tab 1: All Products (Unified Catalog) */}
         {activeTab === "All Products" && (
           <main className="main-content">
-            <h2>Recommended for you</h2>
+            <div className="product-section-header">
+              <h2 className="product-section-title">Recommended for you</h2>
+              <ScraperDropdown
+                selectedPlatform={selectedPlatform}
+                onSelectPlatform={setSelectedPlatform}
+              />
+            </div>
             <div className="product-grid">
               {allUnifiedProducts.slice(0, 12).map((product) => (
                 <ProductCard
